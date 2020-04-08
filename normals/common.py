@@ -1,5 +1,9 @@
 import numpy as np
 from sklearn.neighbors import KDTree
+from sklearn.neighbors import kneighbors_graph
+from scipy.sparse.csgraph import minimum_spanning_tree
+from scipy.sparse import csr_matrix
+from queue import LifoQueue
 
 import time
 
@@ -84,3 +88,31 @@ def compute_normals(cloud,radius=None,n_neighbors=None,verbose=False):
         t1 = time.time()
         print('Done. ({:.3f} s)'.format(t1-t0))
     return normals
+
+
+def compute_emst(cloud):
+    euclidean_graph = np.linalg.norm(cloud[:,np.newaxis,:] - cloud[np.newaxis,:,:],axis=2) # Nx1x3 - 1xNx3 = NxNx3
+    emst = minimum_spanning_tree(euclidean_graph,overwrite=True) # overwrite = True for performance
+    return emst
+
+def symmetric_kneighbors_graph(cloud,n_neighbors):
+    kgraph = kneighbors_graph(cloud,n_neighbors, mode='connectivity')
+    kgraph = kgraph.tocoo()
+    return kgraph + kgraph.transpose()
+
+def acyclic_graph_dfs_iterator(graph,seed):
+    graph = csr_matrix(graph)
+
+    stack = LifoQueue()
+    stack.put((None,seed))
+
+    while not stack.empty():
+        parent,child = stack.get()
+        connected_to_child = graph[child,:].nonzero()[1]
+        # print('New iteration. Child:',child)
+        # print('-- Graph line:',graph[child,:].toarray())
+        # print('-- Connected to child:',connected_to_child)
+        for second_order_child in connected_to_child:
+            if second_order_child != parent:
+                stack.put((child,second_order_child))
+        yield parent,child

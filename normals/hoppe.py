@@ -1,21 +1,7 @@
 import numpy as np
-from sklearn.neighbors import kneighbors_graph
-from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.sparse import csr_matrix
 
-from queue import LifoQueue
-
 from normals.common import *
-
-def compute_emst(cloud):
-    euclidean_graph = np.linalg.norm(cloud[:,np.newaxis,:] - cloud[np.newaxis,:,:],axis=2) # Nx1x3 - 1xNx3 = NxNx3
-    emst = minimum_spanning_tree(euclidean_graph,overwrite=True) # overwrite = True for performance
-    return emst
-
-def symmetric_kneighbors_graph(cloud,n_neighbors):
-    kgraph = kneighbors_graph(cloud,n_neighbors, mode='connectivity')
-    kgraph = kgraph.tocoo()
-    return kgraph + kgraph.transpose()
 
 def compute_riemannian_mst(cloud,normals,n_neighbors,eps=1e-4,verbose=False):
     # See the link below for some explanation on the riemannian graph used in the article
@@ -43,22 +29,6 @@ def compute_riemannian_mst(cloud,normals,n_neighbors,eps=1e-4,verbose=False):
     riemannian_mst = riemannian_mst + riemannian_mst.T # We symmetrize the graph so it is not oriented
     return riemannian_mst
 
-def acyclic_graph_dfs_iterator(graph,seed):
-    graph = csr_matrix(graph)
-
-    stack = LifoQueue()
-    stack.put((None,seed))
-
-    while not stack.empty():
-        parent,child = stack.get()
-        connected_to_child = graph[child,:].nonzero()[1]
-        # print('New iteration. Child:',child)
-        # print('-- Graph line:',graph[child,:].toarray())
-        # print('-- Connected to child:',connected_to_child)
-        for second_order_child in connected_to_child:
-            if second_order_child != parent:
-                stack.put((child,second_order_child))
-        yield parent,child
 
 def hoppe_orientation(cloud,normals,n_neighbors,verbose=False):
     normals_o = normals.copy() # oriented normals
