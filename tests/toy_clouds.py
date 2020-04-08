@@ -1,3 +1,5 @@
+# Code by Pierre-François Massiani
+
 import numpy as np
 
 def toy_cloud_0():

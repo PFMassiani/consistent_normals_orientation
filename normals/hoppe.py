@@ -1,19 +1,29 @@
+# Code by Pierre-François Massiani
+
 import numpy as np
 from scipy.sparse import csr_matrix
 
 from normals.common import *
 
 def compute_riemannian_mst(cloud,normals,n_neighbors,eps=1e-4,verbose=False):
+    """
+        Computes the Riemannian Minimum Spannine Tree for the Hoppe method
+        Parameters:
+            cloud : numpy array : Nx3 : Should not have duplicated points
+            normals : numpy array : Nx3 : Should be normalized
+            n_neighbors : int : used to compute the k-neighbors graph
+            eps : float : the value added to the weight of every edge of the Riemannian MST. Should be small, and strictly positive.
+            verbose : boolean : verbosity
+    """
     # See the link below for some explanation on the riemannian graph used in the article
     # https://math.stackexchange.com/questions/2101217/what-is-the-exact-definition-of-a-riemannian-graph
 
-    # Step 1 : compute the EMST of the cloud
     emst = compute_emst(cloud)
     symmetric_emst = (emst + emst.T)
-    # Step 2 : enrich the EMST with the k-neighborhood graph
+
     symmetric_kgraph = symmetric_kneighbors_graph(cloud,n_neighbors)
     enriched = symmetric_emst + symmetric_kgraph
-    # Step 3 : discard the weights, and replace them with 1 - |n_i . n_j|
+
     enriched = enriched.tocoo()
     connected_l = enriched.row
     connected_r = enriched.col
@@ -25,12 +35,25 @@ def compute_riemannian_mst(cloud,normals,n_neighbors,eps=1e-4,verbose=False):
                 )) for k in range(len(connected_l))] # Can be optimized : we do each operation two times because we do not exploit the symmetry of the riemannian graph
 
     riemannian_graph = csr_matrix((riemannian_weights,(connected_l,connected_r)),shape = (cloud.shape[0],cloud.shape[0]))
-    riemannian_mst = minimum_spanning_tree(riemannian_graph,overwrite = True) # overwrite = True for performance
-    riemannian_mst = riemannian_mst + riemannian_mst.T # We symmetrize the graph so it is not oriented
+    riemannian_mst = minimum_spanning_tree(riemannian_graph,overwrite = True)
+    # The scipy.minimum_spanning_tree function returns a triangular (superior) graph.
+    # This is more memory-efficient, but out implementation of the graph search requires
+    # a symmetric graph.
+    riemannian_mst = riemannian_mst + riemannian_mst.T
     return riemannian_mst
 
 
 def hoppe_orientation(cloud,normals,n_neighbors,verbose=False):
+    """
+        Orients the normals using the Hoppe method presented in "Surface Reconstruction from Unorganized Points" (1992).
+        Parameters:
+            cloud : np array : Nx3 : should not contain duplicates
+            normals : np array : Nx3 : should be normalized
+            n_neighbors : int : the number of neighbors used in the graph computation
+            verbose : boolean : whether the algorithm is verbose. Mainly provides information about computation times.
+        Outputs:
+            normals_o : np array : Nx3 : the oriented normals
+    """
     normals_o = normals.copy() # oriented normals
 
     # Step 1 : compute the riemannian mst of the cloud

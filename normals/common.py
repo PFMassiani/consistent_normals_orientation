@@ -1,3 +1,5 @@
+# Code by Pierre-François Massiani
+
 import numpy as np
 from sklearn.neighbors import KDTree
 from sklearn.neighbors import kneighbors_graph
@@ -8,6 +10,17 @@ from queue import LifoQueue
 import time
 
 def local_PCA(points):
+    """
+        Performs Principal Component Analysis on the points
+        Parameters:
+            points : np array : Nx3
+        Outputs:
+            eigenvalues : the eigenvalues of the cloud
+            eigenvectors : the eigenvectors of the cloud
+        Remark :
+            The order of the eigenvalues and eigenvectors is similar to the one
+            of the np.linalg.eigh method.
+    """
 
     N,d = points.shape
 
@@ -22,11 +35,22 @@ def local_PCA(points):
 
 
 def neighborhood_PCA(query_points, cloud_points, radius=None, n_neighbors=None, verbose=False):
+    """
+        Performs PCA on the neighborhoods of all query_points in cloud_points
+        Parameters:
+            query_points : np array : Px3 : the points we query
+            cloud_points : np array : Nx3 : the points used to compute the neighborhoods
+            radius : float : the radius used to compute the neighborhood. Should be specified iff n_neighbors is None.
+            n_neighbors : int : the number of neighbors used to compute the neighborhoor. Should be specified iff radius is None.
+            verbose : boolean : verbosity
+        Outputs:
+            all_eigenvalues: np array : Px3 : the eigenvalues of the cloud around the query points, from smallest to greatest
+            all_eigen_vectors : np array : Px3x3 : the eigenvectors of the cloud arount the query points, in the same order as the eigenvalues.
+    """
     if radius is None and n_neighbors is None:
         raise ValueError('radius and n_neighbors cannot be both None')
     if radius is not None and n_neighbors is not None:
         raise ValueError('radius and n_neighbors cannot be both set')
-    # This function needs to compute PCA on the neighborhoods of all query_points in cloud_points
 
     all_eigenvalues = np.zeros((query_points.shape[0], 3))
     all_eigenvectors = np.zeros((query_points.shape[0], 3, 3))
@@ -68,10 +92,12 @@ def neighborhood_PCA(query_points, cloud_points, radius=None, n_neighbors=None, 
 
 def compute_normals(cloud,radius=None,n_neighbors=None,verbose=False):
     """
-        Parameters
-        ----------
-            cloud : numpy array [N x 3] : the list of points of which the normals are going to be computed
-            radius : float : the radius of the neighborhood used to compute the normals
+        Computes the normals of the points cloud using PCA.
+        Parameters:
+            cloud : np array : Nx3 : the list of points of which the normals are going to be computed
+            radius : float : the radius used to compute the neighborhood. Should be specified iff n_neighbors is None.
+            n_neighbors : int : the number of neighbors used to compute the neighborhoor. Should be specified iff radius is None.
+            verbose : boolean : verbosity
     """
     if verbose:
         print("Computing normal for the cloud of size",cloud.shape)
@@ -91,16 +117,49 @@ def compute_normals(cloud,radius=None,n_neighbors=None,verbose=False):
 
 
 def compute_emst(cloud):
-    euclidean_graph = np.linalg.norm(cloud[:,np.newaxis,:] - cloud[np.newaxis,:,:],axis=2) # Nx1x3 - 1xNx3 = NxNx3
+    """
+        Computes the Euclidean Minimum Spanning Tree of the points cloud.
+        Parameters:
+            cloud : np array : Nx3
+        Outputs:
+            emst : scipy.sparse.matrix : NxN : the EMST
+        Remarks :
+            1. The EMST that this function outputs is NOT symmetric, but triangular (superior)
+            2. This function has a highly inefficient in terms of memory. It requires the storage
+                of a NxN matrix.
+    """
+    euclidean_graph = np.linalg.norm(cloud[:,np.newaxis,:] - cloud[np.newaxis,:,:],axis=2)
     emst = minimum_spanning_tree(euclidean_graph,overwrite=True) # overwrite = True for performance
     return emst
 
 def symmetric_kneighbors_graph(cloud,n_neighbors):
+    """
+        Computes a graph whose edge (i,j) is nonzero iff j is in the
+        k-neighborhood of i OR i is in the k-neighborhood of j.
+        Parameters:
+            cloud : np array : Nx3
+            n_neighbors : int
+        Outputs:
+            kgraph : scipy.sparse.matrix : NxN
+        Remark :
+            The values of the edges are not significant.
+    """
     kgraph = kneighbors_graph(cloud,n_neighbors, mode='connectivity')
     kgraph = kgraph.tocoo()
     return kgraph + kgraph.transpose()
 
 def acyclic_graph_dfs_iterator(graph,seed):
+    """
+        Computes an iterator for iterating depth-first in an unoriented acyclic graph
+        Parameters:
+            graph : scipy.sparse.csr_matrix : NxN
+            seed : int : the seed that should be considered as the root of the graph
+        Outputs:
+            graph_iterator : iterator
+        Remark :
+            This function uses the fact that the graph is unoriented. Hence, its
+            matrix has to be symmetric.
+    """
     graph = csr_matrix(graph)
 
     stack = LifoQueue()
@@ -109,9 +168,6 @@ def acyclic_graph_dfs_iterator(graph,seed):
     while not stack.empty():
         parent,child = stack.get()
         connected_to_child = graph[child,:].nonzero()[1]
-        # print('New iteration. Child:',child)
-        # print('-- Graph line:',graph[child,:].toarray())
-        # print('-- Connected to child:',connected_to_child)
         for second_order_child in connected_to_child:
             if second_order_child != parent:
                 stack.put((child,second_order_child))

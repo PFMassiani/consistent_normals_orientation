@@ -1,58 +1,16 @@
+# Code by Pierre-François Massiani
+
 import numpy as np
 
-from normals.hoppe import compute_emst
-from normals.hoppe import acyclic_graph_dfs_iterator
+from normals.common import *
 from normals.hoppe import compute_riemannian_mst
 
 from tests.toy_clouds import *
 
-def test_emst_computation():
-    cloud = toy_cloud_0()
-    N = len(cloud)
-
-    emst = compute_emst(cloud)
-    emst = emst.toarray()
-    true_emst = np.array([
-        [0,1,0],
-        [0,0,1],
-        [0,0,0]
-    ])
-
-    if (emst == true_emst).all():
-        return True
-    else:
-        print('---- Computed EMST\n',emst)
-        print('---- True EMST\n',true_emst)
-        return False
-
-def test_graph_traversing():
-    graph = np.array([
-        [0,2,3,1,0],
-        [0,0,0,0,0],
-        [0,0,0,0,1],
-        [0,0,0,0,0],
-        [0,0,0,0,0]
-    ])
-    graph = graph + graph.T
-
-    depth_first_traversing_possible_orders = [
-        [0,1,2,4,3],
-        [0,1,3,2,4],
-        [0,2,4,1,3],
-        [0,2,4,3,1],
-        [0,3,1,2,4],
-        [0,3,2,4,1]
-    ]
-
-    actual_traversing_order = [child for parent,child in acyclic_graph_dfs_iterator(graph=graph,seed=0)]
-    if actual_traversing_order in depth_first_traversing_possible_orders:
-        return True
-    else:
-        print('---- Possible traversing orders:\n',depth_first_traversing_possible_orders)
-        print('---- Actual traversing order\n',actual_traversing_order)
-        return False
-
 def test_riemannian_mst_computation():
+    """
+        Tests the function compute_riemannian_mst on a toy example by comparing it with hand-calculated values.
+    """
     n_neighbors = 2
     eps = 1e-1
     tolerance = 1e-6
@@ -131,6 +89,10 @@ def test_riemannian_mst_computation():
         return False
 
 def test_iteration_trough_riemannian_mst(eps=1e-4,verbose=False):
+    """
+        Tests the function common.acyclic_graph_dfs_iterator on the output of compute_riemannian_mst.
+        This test emphasizes the role of a non-zero epsilon in the computation of the weights of the riemannian graph.
+    """
     n_neighbors = 2
     tolerance = 1e-6
 
@@ -165,12 +127,3 @@ def test_iteration_trough_riemannian_mst(eps=1e-4,verbose=False):
             print('---- Actual traversing order')
             print(actual_traversing_order)
         return False
-
-
-if __name__ == '__main__':
-    print('EMST Computation test :',passed(test_emst_computation()))
-    print('Graph traversing order test :',passed(test_graph_traversing()))
-    print('Riemannian MST computation test :',passed(test_riemannian_mst_computation()))
-    eps=1e-4
-    print('Riemannian graph traversing (eps={:.4f}):'.format(eps), passed(test_iteration_trough_riemannian_mst(eps)))
-    print('Riemannian graph traversing (eps=0):', passed(test_iteration_trough_riemannian_mst(0)))
