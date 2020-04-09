@@ -495,7 +495,7 @@ def compute_riemannian_mst(cloud,normals,n_neighbors,verbose=False):
     riemannian_graph = csr_matrix((riemannian_weights,(pi_s,pj_s)),shape = (cloud.shape[0],cloud.shape[0]))
     riemannian_mst = minimum_spanning_tree(riemannian_graph,overwrite = True) # overwrite = True for performance
     # The scipy.minimum_spanning_tree function returns a triangular (superior) graph.
-    # This is more memory-efficient, but out implementation of the graph search requires
+    # This is more memory-efficient, but our implementation of the graph search requires
     # a symmetric graph.
     riemannian_mst = riemannian_mst + riemannian_mst.T
 

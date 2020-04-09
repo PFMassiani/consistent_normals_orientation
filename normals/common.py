@@ -5,6 +5,7 @@ from sklearn.neighbors import KDTree
 from sklearn.neighbors import kneighbors_graph
 from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.sparse import csr_matrix
+from scipy.spatial import Delaunay
 from queue import LifoQueue
 
 import time
@@ -115,6 +116,43 @@ def compute_normals(cloud,radius=None,n_neighbors=None,verbose=False):
         print('Done. ({:.3f} s)'.format(t1-t0))
     return normals
 
+def slow_emst(cloud):
+    """
+        Inefficient implementation of a Euclidean MST finding algorithm. Has memory and time cost of O(N**2).
+        Parameters:
+            cloud : np array : Nx3
+        Outputs:
+            emst : scipy.sparse matrix : NxN : the EMST
+    """
+    euclidean_graph = np.linalg.norm(cloud[:,np.newaxis,:] - cloud[np.newaxis,:,:],axis=2)
+    emst = minimum_spanning_tree(euclidean_graph,overwrite=True) # overwrite = True for performance
+    return emst
+
+def fast_emst(cloud):
+    """
+        Efficient implementation of a Euclidean MST finding algorithm.
+        Parameters:
+            cloud : np array : Nx3
+        Outputs:
+            emst : scipy.sparse matrix : NxN : the EMST
+    """
+    # The euclidean minimum spanning graph is a subgraph of the Delaunay graph
+    # See https://fr.wikipedia.org/wiki/Triangulation_de_Delaunay#Applications
+    delaunay_triangulation = Delaunay(cloud)
+    extract_edges = ((0,1),(1,2),(0,2))
+    delaunay_edges = None
+    for edge_extraction in extract_edges:
+        if delaunay_edges is None:
+            delaunay_edges = delaunay_triangulation.simplices[:,edge_extraction]
+        else:
+            delaunay_edges = np.vstack((delaunay_edges,delaunay_triangulation.simplices[:,edge_extraction]))
+    euclidean_weights = np.linalg.norm(
+                            cloud[delaunay_edges[:,0],:] - cloud[delaunay_edges[:,1]],
+                            axis = 1
+                        )
+    delaunay_euclidean_graph = csr_matrix((euclidean_weights,delaunay_edges.T), shape=(len(cloud),len(cloud)))
+    emst = minimum_spanning_tree(delaunay_euclidean_graph,overwrite=True)
+    return emst
 
 def compute_emst(cloud):
     """
@@ -128,9 +166,8 @@ def compute_emst(cloud):
             2. This function has a highly inefficient in terms of memory. It requires the storage
                 of a NxN matrix.
     """
-    euclidean_graph = np.linalg.norm(cloud[:,np.newaxis,:] - cloud[np.newaxis,:,:],axis=2)
-    emst = minimum_spanning_tree(euclidean_graph,overwrite=True) # overwrite = True for performance
-    return emst
+    return fast_emst(cloud)
+
 
 def symmetric_kneighbors_graph(cloud,n_neighbors):
     """

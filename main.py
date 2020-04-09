@@ -49,6 +49,7 @@ if __name__ == '__main__':
     datasets = {dataset_name:dataset_name + '.ply' for dataset_name in [
         'bunny','sphere','parabola','cube','close_sheet','plane','small_plane'
     ]}
+    datasets['lille'] = 'Lille_street_small.ply'
 
     radii = {}
     radii['sphere'] = 2
@@ -58,6 +59,7 @@ if __name__ == '__main__':
     radii['close_sheet'] = 0.5
     radii['plane'] = 0.2
     radii['small_plane'] = 1.1
+    radii['lille'] = 1
 
     neighbors = {}
     neighbors['sphere'] = 10
@@ -67,6 +69,7 @@ if __name__ == '__main__':
     neighbors['close_sheet'] = 3
     neighbors['plane'] = 5
     neighbors['small_plane'] = 2
+    neighbors['lille'] = 10
 
     if len(sys.argv) > 1:
         cloud_name = sys.argv[1]

@@ -7,7 +7,7 @@ from normals.common import *
 
 def compute_riemannian_mst(cloud,normals,n_neighbors,eps=1e-4,verbose=False):
     """
-        Computes the Riemannian Minimum Spannine Tree for the Hoppe method
+        Computes the Riemannian Minimum Spanning Tree for the Hoppe method
         Parameters:
             cloud : numpy array : Nx3 : Should not have duplicated points
             normals : numpy array : Nx3 : Should be normalized
@@ -37,7 +37,7 @@ def compute_riemannian_mst(cloud,normals,n_neighbors,eps=1e-4,verbose=False):
     riemannian_graph = csr_matrix((riemannian_weights,(connected_l,connected_r)),shape = (cloud.shape[0],cloud.shape[0]))
     riemannian_mst = minimum_spanning_tree(riemannian_graph,overwrite = True)
     # The scipy.minimum_spanning_tree function returns a triangular (superior) graph.
-    # This is more memory-efficient, but out implementation of the graph search requires
+    # This is more memory-efficient, but our implementation of the graph search requires
     # a symmetric graph.
     riemannian_mst = riemannian_mst + riemannian_mst.T
     return riemannian_mst
