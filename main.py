@@ -18,7 +18,7 @@ if __name__ == '__main__':
                 python3 main.py [CLOUD_NAME [ORIENTATION_METHOD]]
 
             CLOUD_NAME (optional) : the name of the points cloud, without the ".ply" extension
-            ORIENTATION_METHOD : either "hoppe" or "konig"
+            ORIENTATION_METHOD (optional) : either "hoppe" or "konig"
 
         Remark :
             1. Point clouds should be in the ./data directory
@@ -31,10 +31,10 @@ if __name__ == '__main__':
 
     # Arguments parsing
     if len(sys.argv) > 2:
-        if sys.argv[2] == 'konig':
+        if sys.argv[2] == 'hoppe':
             orientation_method = konig_orientation
             method = 'Hoppe'
-        elif sys.argv[2] == 'hoppe':
+        elif sys.argv[2] == 'konig':
             orientation_method = hoppe_orientation
             method = 'König and Gumhold'
         else:
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     neighbors['close_sheet'] = 3
     neighbors['plane'] = 5
     neighbors['small_plane'] = 2
-    neighbors['lille'] = 10
+    neighbors['lille'] = 30
 
     if len(sys.argv) > 1:
         cloud_name = sys.argv[1]
@@ -77,8 +77,11 @@ if __name__ == '__main__':
         # Change here to select the default cloud (if not specified in command line)
         cloud_name = 'parabola'
     cloud_path = path.join(data_dir, datasets[cloud_name])
-
-    cloud_ply = read_ply(cloud_path)
+    try:
+        cloud_ply = read_ply(cloud_path)
+    except FileNotFoundError:
+        print('File {} not found. Try running "python3 create_toy_clouds.py" first.'.format(cloud_path))
+        exit()
     cloud = np.vstack((cloud_ply['x'],cloud_ply['y'],cloud_ply['z'])).T
     print('Loaded points cloud {:s} successfully.'.format(cloud_path))
 

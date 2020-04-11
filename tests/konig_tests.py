@@ -159,7 +159,7 @@ def figure2_u_discrepancies(verbose = True):
         u_doc = np.min((ckeep_doc,cflip_doc)) / np.max((ckeep_doc,cflip_doc))
         if verbose:
             print('--- Test {} ---'.format(test_number))
-           
+
             print('u (nopost):',u_no)
             print('u (clip01):',u_clip)
             print('u (docum.):',u_doc)
@@ -178,7 +178,7 @@ def figure2_u_discrepancies(verbose = True):
     compute_discrepancies(toy_cloud_3,1)
     compute_discrepancies(toy_cloud_4,2)
     compute_discrepancies(toy_cloud_5,3)
-    
+
 
 def test_projection(verbose=False):
     """

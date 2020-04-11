@@ -505,7 +505,7 @@ def compute_riemannian_mst(cloud,normals,n_neighbors,verbose=False):
 
     return riemannian_mst,flip_criterion
 
-def konig_orientation(cloud,normals,n_neighbors,verbose=False):
+def konig_orientation(cloud,normals,n_neighbors,return_n_edges=False,verbose=False):
     """
         Orients the normals using the Konig and Gumhold method.
         Parameters:
@@ -515,11 +515,13 @@ def konig_orientation(cloud,normals,n_neighbors,verbose=False):
             verbose : boolean : unused
         Outputs:
             normals_o : np array : Nx3 : the oriented normals
+            (n_edges : int : the number of edges of the Riemannian graph)
     """
     normals_o = normals.copy()
     was_flipped = np.zeros(len(cloud),dtype=np.bool)
 
     riemannian_mst,flip_criterion = compute_riemannian_mst(cloud,normals,n_neighbors,verbose)
+    n_edges = riemannian_mst.count_nonzero()
 
     seed_index = np.argmax(cloud[:,2])
     # We arbitrarily set the direction of the seed so it points towards increasing z values
@@ -538,5 +540,7 @@ def konig_orientation(cloud,normals,n_neighbors,verbose=False):
         if flip:
             was_flipped[point_index] = True
             normals_o[point_index,:] *= -1
-
-    return normals_o
+    if not return_n_edges:
+        return normals_o
+    else:
+        return normals_o,n_edges

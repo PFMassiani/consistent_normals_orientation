@@ -43,21 +43,24 @@ def compute_riemannian_mst(cloud,normals,n_neighbors,eps=1e-4,verbose=False):
     return riemannian_mst
 
 
-def hoppe_orientation(cloud,normals,n_neighbors,verbose=False):
+def hoppe_orientation(cloud,normals,n_neighbors,return_n_edges=False,verbose=False):
     """
         Orients the normals using the Hoppe method presented in "Surface Reconstruction from Unorganized Points" (1992).
         Parameters:
             cloud : np array : Nx3 : should not contain duplicates
             normals : np array : Nx3 : should be normalized
             n_neighbors : int : the number of neighbors used in the graph computation
+            return_n_edges : boolean : whether to return the number of edges of the Riemannian MST
             verbose : boolean : whether the algorithm is verbose. Mainly provides information about computation times.
         Outputs:
             normals_o : np array : Nx3 : the oriented normals
+            (n_edges : int : the number of edges of the Riemannian graph)
     """
     normals_o = normals.copy() # oriented normals
 
     # Step 1 : compute the riemannian mst of the cloud
-    riemannian_mst = compute_riemannian_mst(cloud,normals,n_neighbors,verbose)
+    riemannian_mst = compute_riemannian_mst(cloud,normals,n_neighbors,verbose=verbose)
+    n_edges = riemannian_mst.count_nonzero()
 
     # Step 2 : select seed and its orientation
     seed_index = np.argmax(cloud[:,2])
@@ -74,5 +77,7 @@ def hoppe_orientation(cloud,normals,n_neighbors,verbose=False):
 
         if normals_o[point_index,:] @ parent_normal < 0:
             normals_o[point_index,:] *= -1
-
-    return normals_o
+    if not return_n_edges:
+        return normals_o
+    else:
+        return normals_o,n_edges
