@@ -33,7 +33,8 @@ if __name__ == '__main__':
         print('Curves complexities computation test :',passed(konig.test_hermite_curves_complexities(verbose=True)))
         print('Propagation criterion computation test :',passed(konig.test_u_computation(verbose=True)))
         print('Orientation of bases test :',passed(konig.orientation_of_bases_test(verbose=True)))
-
+        print('Proof of the discrepancies between the values of u presented on Figure 2:')
+        konig.figure2_u_discrepancies()
         verbose_tests = False
         if verbose_tests:
             print('Tangents at critical points test : please check the values below.')

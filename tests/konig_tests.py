@@ -105,12 +105,6 @@ def test_hermite_curves_complexities(verbose=False):
 def test_u_computation(verbose = False):
     """
         Tests the computation of the normal propagation criterion on the examples of Figure 2.
-        Remark :
-            There probably is a mistake in the values for u_ours presented in Figure 2. Indeed,
-            this code obtains the values in the article only when the option "no_postprocessing"
-            is selected in the function compute_turning_points in "./normals/konig.py".
-            The values we have set here for cases b and c (cf. Figure 2) have been found using
-            iterative calibration with test "test_complexity".
     """
     tolerance = 1e-2
     def test_u(cloud_function,true_u,test_number):
@@ -139,6 +133,52 @@ def test_u_computation(verbose = False):
     passed = test_u(toy_cloud_4,0.73,2) and passed
     passed = test_u(toy_cloud_5,1.,3) and passed
     return passed
+
+def figure2_u_discrepancies(verbose = True):
+    """
+        Shows the discrepancies in the values for u obtained in the cases presented on Figure 2
+    """
+    def compute_discrepancies(cloud_function,test_number):
+        cloud,normals = cloud_function()
+        pi_s = np.array([0])
+        pj_s = np.array([1])
+
+        reference_plane,reference_base = compute_reference_planes(pi_s,pj_s,cloud,normals)
+        nopost_complexities = compute_hermite_curves_complexities(pi_s,pj_s,cloud,normals,reference_plane,reference_base,critical_postprocessing="none").squeeze()
+        clip_complexities = compute_hermite_curves_complexities(pi_s,pj_s,cloud,normals,reference_plane,reference_base,critical_postprocessing="clip").squeeze()
+        docpost_complexities = compute_hermite_curves_complexities(pi_s,pj_s,cloud,normals,reference_plane,reference_base,critical_postprocessing="documentation").squeeze()
+        ckeep_no = np.min(nopost_complexities[:2])
+        cflip_no = np.min(nopost_complexities[2:])
+        ckeep_cl = np.min(clip_complexities[:2])
+        cflip_cl = np.min(clip_complexities[2:])
+        ckeep_doc = np.min(docpost_complexities[:2])
+        cflip_doc = np.min(docpost_complexities[2:])
+
+        u_no = np.min((ckeep_no,cflip_no)) / np.max((ckeep_no,cflip_no))
+        u_clip = np.min((ckeep_cl,cflip_cl)) / np.max((ckeep_cl,cflip_cl))
+        u_doc = np.min((ckeep_doc,cflip_doc)) / np.max((ckeep_doc,cflip_doc))
+        if verbose:
+            print('--- Test {} ---'.format(test_number))
+           
+            print('u (nopost):',u_no)
+            print('u (clip01):',u_clip)
+            print('u (docum.):',u_doc)
+            print('Complexities (nopost):',nopost_complexities)
+            print('Complexities (clip01):',clip_complexities)
+            print('Complexities (docum.):',docpost_complexities)
+    if verbose:
+        print('------\n\
+ Legend:\n* nopost : the critical points are exactly the roots of\
+ the polynomial, or [1/3,2/3] if there are none\n* clip01 : The critical points are eh roots\
+ of the polynomial, bu clipped between [0,1], with no considerations of sampling\n\* docum. :\
+ The critical points are the ones described in the documentation of compute_critical_points.\
+ They belong to [0,1]\n------')
+    pi = np.pi
+    compute_discrepancies(toy_cloud_2,0)
+    compute_discrepancies(toy_cloud_3,1)
+    compute_discrepancies(toy_cloud_4,2)
+    compute_discrepancies(toy_cloud_5,3)
+    
 
 def test_projection(verbose=False):
     """

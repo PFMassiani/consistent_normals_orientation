@@ -163,10 +163,12 @@ def compute_emst(cloud):
             emst : scipy.sparse.matrix : NxN : the EMST
         Remarks :
             1. The EMST that this function outputs is NOT symmetric, but triangular (superior)
-            2. This function has a highly inefficient in terms of memory. It requires the storage
-                of a NxN matrix.
     """
-    return fast_emst(cloud)
+    # The Delaunay triangulation method requires at least 5 points in the cloud
+    if len(cloud) > 5:
+        return fast_emst(cloud)
+    else:
+        return slow_emst(cloud)
 
 
 def symmetric_kneighbors_graph(cloud,n_neighbors):

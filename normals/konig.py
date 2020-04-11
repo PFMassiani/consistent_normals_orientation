@@ -250,7 +250,7 @@ def compute_turning_points_coefficients(qijs,ti,tj,tangents_orientations):
 
     return a2,a1,a0
 
-def compute_turning_points(a2,a1,a0):
+def compute_turning_points(a2,a1,a0,critical_postprocessing="documentation"):
     """
         Computes the turning points of the Hermite curves (roots of a2*X**2 + a1*X + a0 lying in [0,1]). These roots are the candidates for the turning points of the Hermite curves.
         Special cases :
@@ -264,6 +264,7 @@ def compute_turning_points(a2,a1,a0):
             a2 : Nx4 : the a2 coefficients
             a1 : Nx4 : the a1 coefficients
             a0 : Nx4 : the a0 coefficients
+            critical_postprocessing : string : for testing purposes, should be left to default value in general. Either "documentation","clip", or "none".
         Outputs:
             turning_points : Nx4x2 : the turning points
         Remark:
@@ -290,15 +291,15 @@ def compute_turning_points(a2,a1,a0):
 
     # The following variables are for test purposes
     ## (Recommended) Set to True so the behaviour is the one described in the documentation
-    documentation_behaviour = True
+    documentation_behaviour = critical_postprocessing == 'documentation'
     ## Set to True so the behaviour is clipping the values between 0 and 1
     ## (you should set documentation_behaviour to False first)
-    clip_01 = False
+    clip_01 = critical_postprocessing == 'clip'
     ## Set to True so there is no post processing of the roots: the returned values are
     ##  1. The roots of the polynomial, whether or not they are in [0,1], if there are any
     ##  2. [1/3,2/3] otherwise
     ## (you should set documentation_behaviour and clip_01 to False first)
-    no_postprocessing = False
+    no_postprocessing = critical_postprocessing == 'none'
 
     if documentation_behaviour:
         low_zero_high_one = np.logical_and(
@@ -412,7 +413,7 @@ def compute_tangents_at_critical_points(pis_proj,pjs_proj,ti,tj,turning_points,t
                 )
     return tangents_at_critical_points
 
-def compute_hermite_curves_complexities(pi_s,pj_s,cloud,normals,reference_planes,reference_bases):
+def compute_hermite_curves_complexities(pi_s,pj_s,cloud,normals,reference_planes,reference_bases,critical_postprocessing="documentation"):
     """
         Computes the complexities of each Hermite curve for each edge in the graph.
         Parameters:
@@ -422,6 +423,7 @@ def compute_hermite_curves_complexities(pi_s,pj_s,cloud,normals,reference_planes
             normals : np array : Nx3 : should be normalized
             reference_planes : np array : Nx3 : the list of the reference planes' normals, normalized.
             reference_bases : np array : Nx2x3 : the list of the reference planes' bases, normalized. The tuple (base,normal) should be orthonormal.
+            critical_postprocessing : string : for testing purposes, should be left to default value in general. Either "documentation","clip", or "none".
     """
 
     N = pi_s.shape[0]
@@ -447,7 +449,7 @@ def compute_hermite_curves_complexities(pi_s,pj_s,cloud,normals,reference_planes
     tj = tj * 2*np.linalg.norm(eijs,axis=-1)[:,np.newaxis]
 
     a2,a1,a0 = compute_turning_points_coefficients(qijs,ti,tj,tangents_orientations)
-    turning_points = compute_turning_points(a2,a1,a0)
+    turning_points = compute_turning_points(a2,a1,a0,critical_postprocessing)
 
     tangents_at_critical_points = compute_tangents_at_critical_points(pis_proj,pjs_proj,ti,tj,turning_points,tangents_orientations)
 
